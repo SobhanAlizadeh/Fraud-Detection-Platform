@@ -1,0 +1,263 @@
+version: '3.8'
+
+services:
+  # ==================== PostgreSQL ====================
+  postgres:
+    image: postgres:15-alpine
+    container_name: fraud_postgres
+    environment:
+      POSTGRES_DB: fraud_db
+      POSTGRES_USER: fraud_user
+      POSTGRES_PASSWORD: fraud_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - fraud_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== PGAdmin ====================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fraud_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@fraud.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - fraud_network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== Kafka (با KRaft) ====================
+  kafka:
+    image: apache/kafka:latest
+    container_name: fraud_kafka
+    environment:
+      # تنظیمات KRaft (بدون Zookeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      
+      # تنظیمات حافظه
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms256M"
+      
+    ports:
+      - "9092:9092"
+    networks:
+      - fraud_network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== Kafka UI (برای مدیریت) ====================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: fraud_kafka_ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: localhost:2181  # فقط برای نمایش
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    networks:
+      - fraud_network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== MLflow (برای ردیابی مدل‌ها) ====================
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: fraud_mlflow
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://fraud_user:fraud_pass@postgres:5432/mlflow_db
+      --default-artifact-root ./mlflow_artifacts
+      --host 0.0.0.0
+      --port 5000
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fraud_network
+    volumes:
+      - mlflow_data:/mlflow
+      - ./models:/mlflow_artifacts
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== FastAPI (اپلیکیشن اصلی) ====================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fraud_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fraud_db
+      DB_USER: fraud_user
+      DB_PASSWORD: fraud_pass
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fraud_network
+    volumes:
+      - ./src:/app/src
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./requirements.txt:/app/requirements.txt
+    restart: unless-stopped
+    command: >
+      sh -c "sleep 10 &&
+             pip install --no-cache-dir joblib==1.3.2 scikit-learn==1.3.2 &&
+             uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== Streamlit (داشبورد) ====================
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: fraud_streamlit
+    environment:
+      - API_URL=http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    
+    networks:
+      - fraud_network
+    volumes:
+      - ./dashboard:/app/dashboard
+      - ./.streamlit:/app/.streamlit  # <--- اضافه کنید
+
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== Prometheus (مانیتورینگ) ====================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fraud_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro   # <--- مسیر درست
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - fraud_network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'        # <--- مسیر درست
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+
+  # ==================== Grafana (داشبورد مانیتورینگ) ====================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fraud_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - fraud_network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ==================== شبکه‌ها ====================
+networks:
+  fraud_network:
+    driver: bridge
+    name: fraud_network
+
+# ==================== حجم‌ها ====================
+volumes:
+  postgres_data:
+    name: fraud_postgres_data
+  kafka_data:
+    name: fraud_kafka_data
+  mlflow_data:
+    name: fraud_mlflow_data
+  prometheus_data:
+    name: fraud_prometheus_data
+  grafana_data:
+    name: fraud_grafana_data

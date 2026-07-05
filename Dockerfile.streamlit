@@ -1,0 +1,40 @@
+# ============================================
+# Dockerfile برای Streamlit Dashboard
+# ============================================
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+# نصب پیش‌نیازها
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# کپی requirements.txt
+COPY requirements.txt .
+
+# نصب وابستگی‌ها
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir python-dateutil pytz six && \
+    pip install --no-cache-dir streamlit plotly pandas numpy requests
+
+# کپی سورس کد
+COPY dashboard/ ./dashboard/
+COPY src/ ./src/
+
+# ایجاد دایرکتوری secrets
+RUN mkdir -p /app/.streamlit && \
+    echo "API_URL = \"http://api:8000\"" > /app/.streamlit/secrets.toml
+
+# پورت اکسپوز
+EXPOSE 8501
+
+# اجرا
+CMD ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.enableCORS=false"]

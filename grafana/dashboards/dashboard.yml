@@ -1,0 +1,26 @@
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+grafana:
+  image: grafana/grafana:latest
+  container_name: fraud_grafana
+  environment:
+    GF_SECURITY_ADMIN_USER: admin
+    GF_SECURITY_ADMIN_PASSWORD: admin123
+  volumes:
+    - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    - grafana_data:/var/lib/grafana
+  ports:
+    - "3000:3000"
+  networks:
+    - fraud_network
+  restart: unless-stopped

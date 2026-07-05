@@ -1,0 +1,155 @@
+{
+  "title": "Fraud Detection API - FastAPI",
+  "uid": "fraud-fastapi",
+  "timezone": "browser",
+  "tags": ["fraud-detection", "fastapi"],
+  "schemaVersion": 36,
+  "panels": [
+    {
+      "title": "API Status",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "up{job=\"fraud_api\"}",
+          "legendFormat": "Status"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null, "op": "gt", "valueType": "number"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Requests per Second",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "RPS"
+        }
+      ]
+    },
+    {
+      "title": "Total Requests",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "targets": [
+        {
+          "expr": "http_requests_total",
+          "legendFormat": "Total"
+        }
+      ]
+    },
+    {
+      "title": "Request Duration (p95)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "title": "API Requests Over Time",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "Total"
+        }
+      ],
+      "xAxis": {"mode": "time"},
+      "yAxis": {"label": "Requests/s"}
+    },
+    {
+      "title": "Response Time Distribution",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.90, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p90"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yAxis": {"label": "Seconds"}
+    },
+    {
+      "title": "HTTP Status Codes",
+      "type": "barchart",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "title": "Fraud Predictions",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "targets": [
+        {
+          "expr": "rate(fraud_predictions_total[5m])",
+          "legendFormat": "Fraud Predictions"
+        }
+      ]
+    },
+    {
+      "title": "CPU Usage",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 4, "x": 16, "y": 12},
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[5m])",
+          "legendFormat": "CPU"
+        }
+      ]
+    },
+    {
+      "title": "Memory Usage",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 4, "x": 20, "y": 12},
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "Memory"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "query": "label_values(up, job)",
+        "refresh": 1,
+        "current": {"selected": true, "text": "fraud_api", "value": "fraud_api"}
+      }
+    ]
+  }
+}

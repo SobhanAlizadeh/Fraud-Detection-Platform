@@ -1,0 +1,105 @@
+# ============================================
+# Alert Rules for Fraud Detection
+# ============================================
+
+groups:
+  # گروه 1: هشدارهای سلامت سیستم
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # API down
+      - alert: APIDown
+        expr: up{job="fraud_api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API is down"
+          description: "The Fraud Detection API is not responding for 1 minute"
+      
+      # Database down
+      - alert: DatabaseDown
+        expr: up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database is down"
+          description: "PostgreSQL is not responding"
+      
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "API response time is above 1s for 5 minutes"
+
+  # گروه 2: هشدارهای مدل
+  - name: model_alerts
+    interval: 1h
+    rules:
+      # High fraud rate
+      - alert: HighFraudRate
+        expr: rate(fraud_predictions_total{label="fraud"}[1h]) / rate(fraud_predictions_total[1h]) > 0.1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High fraud rate detected"
+          description: "Fraud rate is above 10% in the last hour"
+      
+      # Model performance degradation
+      - alert: ModelPerformanceDegradation
+        expr: model_accuracy < 0.85
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model performance degraded"
+          description: "Model accuracy dropped below 85%"
+      
+      # High false positive rate
+      - alert: HighFalsePositiveRate
+        expr: rate(model_false_positives_total[1h]) / rate(model_predictions_total[1h]) > 0.05
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High false positive rate"
+          description: "False positive rate is above 5%"
+
+  # گروه 3: هشدارهای کسب‌وکار
+  - name: business_alerts
+    interval: 15m
+    rules:
+      # Unusual transaction volume
+      - alert: UnusualTransactionVolume
+        expr: abs((rate(transaction_total[1h]) - rate(transaction_total[24h])) / rate(transaction_total[24h])) > 0.5
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual transaction volume"
+          description: "Transaction volume deviates by more than 50% from average"
+      
+      # High value transaction
+      - alert: HighValueTransaction
+        expr: sum(transaction_amount) > 10000
+        labels:
+          severity: critical
+        annotations:
+          summary: "High value transaction detected"
+          description: "A transaction over $10,000 was detected"
+      
+      # Multiple fraud from same user
+      - alert: MultipleFraudFromSameUser
+        expr: count(fraud_predictions_total{user_id!=""}) by (user_id) > 3
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Multiple frauds from same user"
+          description: "User {{ $labels.user_id }} has multiple fraud detections"

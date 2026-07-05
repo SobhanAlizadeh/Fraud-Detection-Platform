@@ -1,0 +1,11 @@
+streamlit-build.log
+.env
+venv/
+reports/**
+models/**
+logs/
+init-db.sql
+data/**
+catboost_info
+mlruns/**
+.dvc
