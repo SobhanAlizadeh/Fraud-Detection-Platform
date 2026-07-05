@@ -1,24 +1,19 @@
-# Site Settings
 title: Fraud Detection Platform
 
 description: >-
   An end-to-end machine learning platform for detecting
   fraudulent transactions in real-time.
 
-# GitHub Pages (User Site)
 url: "https://sobhanalizadeh.github.io"
-baseurl: ""
+baseurl: "/Fraud-Detection-Platform"
 
-# Theme
 theme: jekyll-theme-slate
 
-# Plugins
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
 
-# Default values
 defaults:
   - scope:
       path: ""
@@ -26,6 +21,5 @@ defaults:
       layout: default
       author: Sobhan Alizadeh
 
-# Social
 social:
   github: sobhanalizadeh
