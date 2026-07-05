@@ -10,7 +10,7 @@ url: "https://sobhanalizadeh.github.io"
 baseurl: ""
 
 # Theme
-theme: jekyll-theme-cayman
+theme: jekyll-theme-slate
 
 # Plugins
 plugins:
