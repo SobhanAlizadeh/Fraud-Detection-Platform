@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir python-dateutil pytz six
 # نصب پکیج‌های اصلی با --no-deps برای جلوگیری از conflict
 RUN pip install --no-cache-dir numpy pandas scikit-learn xgboost lightgbm catboost --no-deps
 
-RUN RUN pip install --no-cache-dir scipy==1.11.4
+RUN pip install --no-cache-dir scipy==1.11.4 prometheus-client==0.19.0
 
 RUN pip install --no-cache-dir joblib==1.3.2 scikit-learn==1.3.2
 # نصب بقیه وابستگی‌ها

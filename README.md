@@ -221,10 +221,9 @@ MLFLOW_TRACKING_URI=http://mlflow:5000
 
 | Model | Status |
 |--------|--------|
-| RandomForest | ✅ Default |
 | XGBoost | ✅ |
 | LightGBM | ✅ |
-| CatBoost | ⚠ Legacy |
+| CatBoost | ✅ |
 
 ---
 

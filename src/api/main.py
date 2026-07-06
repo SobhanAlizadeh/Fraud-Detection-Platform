@@ -9,6 +9,8 @@ import uvicorn
 from datetime import datetime
 import time
 
+from api.services import consumer_service
+
 from .routers import fraud
 from .schemas.transaction import ErrorResponse
 from ..core.config import config
@@ -71,6 +73,17 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("👋 Shutting down...")
     db_manager.close()
+    try:
+        consumer_service.start()
+        logger.info("✅ Kafka consumer started")
+    except Exception as e:
+        logger.error(f"❌ Failed to start Kafka consumer: {e}")
+    
+    yield
+    
+    # SHUTDOWN
+    logger.info("👋 Shutting down...")
+    consumer_service.stop()
 
 # ============== ایجاد اپلیکیشن ==============
 

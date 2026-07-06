@@ -9,3 +9,7 @@ data/**
 catboost_info
 mlruns/**
 .dvc
+src/api/__pycache__/
+src/api/service/__pycache__/
+src/api/schemas/__pycache__/
+src/api/routers/__pycache__/

@@ -8,6 +8,8 @@ from sqlalchemy import func, and_
 from ...core.database import db_manager, Transaction, Prediction
 from ...core.config import config
 from ...ml_engineering.inference import FraudInferenceService  
+from src.core.kafka_client import kafka_client
+
 logger = logging.getLogger(__name__)
 
 class FraudService:
@@ -33,28 +35,24 @@ class FraudService:
             saved_transaction = self._save_transaction(transaction)
             logger.info(f"✅ Transaction saved: {transaction.get('transaction_id')}")
             
-            # 2. پیش‌بینی با مدل
-            prediction = self.inference_service.predict(transaction)
+            # 2. انتشار در کافکا
+            kafka_client.publish(
+                topic="transactions",
+                message=transaction,
+                key=transaction.get('transaction_id')
+            )
+            logger.info(f"📤 Transaction published to Kafka: {transaction.get('transaction_id')}")
             
-            # 3. اگر پیش‌بینی موفق بود، نتیجه رو ذخیره کن
-            if prediction and 'error' not in prediction:
-                self._update_transaction_fraud(
-                    transaction.get('transaction_id'),
-                    prediction.get('is_fraud', False),
-                    prediction.get('fraud_probability', 0.0)
-                )
-                logger.info(f"✅ Prediction saved for transaction: {transaction.get('transaction_id')}")
-            
-            # 4. برگرداندن نتیجه
+            # 3. برگرداندن پاسخ اولیه
             return {
                 'transaction_id': transaction.get('transaction_id'),
                 'user_id': transaction.get('user_id'),
                 'amount': transaction.get('amount'),
                 'timestamp': transaction.get('timestamp'),
-                'prediction': prediction,
-                'status': 'processed'
+                'status': 'pending',  # در حال پردازش
+                'message': 'Transaction received and queued for fraud detection'
             }
-            
+        
         except Exception as e:
             logger.error(f"❌ Error in fraud detection: {e}")
             return {
