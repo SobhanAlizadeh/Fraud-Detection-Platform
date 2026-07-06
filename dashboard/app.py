@@ -115,6 +115,12 @@ API_URL = (
 # ============================================================
 # توابع کمکی
 # ============================================================
+if 'transaction_result' not in st.session_state:
+    st.session_state.transaction_result = None
+if 'last_transaction_id' not in st.session_state:
+    st.session_state.last_transaction_id = None
+if 'detection_status' not in st.session_state:
+    st.session_state.detection_status = None
 
 def call_api(endpoint: str, method: str = "GET", data: Dict = None) -> Dict:
     """فراخوانی API با مدیریت خطا"""
@@ -472,7 +478,6 @@ if page == "🏠 Dashboard":
 # ============================================================
 # صفحه 2: تشخیص بلادرنگ
 # ============================================================
-
 elif page == "🔍 Real-time Detection":
     st.markdown("""
     <div class="header">
@@ -528,6 +533,7 @@ elif page == "🔍 Real-time Detection":
                 help="Higher threshold = fewer false positives, may miss some fraud"
             )
         
+        # دکمه تشخیص تقلب
         if st.button("🚀 Detect Fraud", type="primary", use_container_width=True):
             transaction = {
                 "transaction_id": transaction_id,
@@ -561,34 +567,88 @@ elif page == "🔍 Real-time Detection":
                         st.error(f"❌ {result['error']}")
                     else:
                         data = result.get("data", {})
-                        prediction = data.get("prediction", {})
+                        status = data.get("status", "unknown")
                         
-                        st.success("✅ Detection completed!")
+                        # ذخیره در session_state
+                        st.session_state.last_transaction_id = data.get('transaction_id')
+                        st.session_state.detection_status = status
+                        st.session_state.transaction_data = transaction
                         
-                        col1, col2, col3 = st.columns(3)
-                        
-                        fraud_prob = prediction.get("fraud_probability", 0)
-                        is_fraud = prediction.get("is_fraud", False)
-                        
-                        with col1:
-                            st.metric("Fraud Probability", f"{fraud_prob * 100:.1f}%")
-                        
-                        with col2:
-                            status_text = "🚨 FRAUD" if is_fraud else "✅ LEGITIMATE"
-                            status_color = "red" if is_fraud else "green"
-                            st.markdown(
-                                f"### Status: <span style='color:{status_color}; font-size:24px;'>{status_text}</span>",
-                                unsafe_allow_html=True
-                            )
-                        
-                        with col3:
-                            st.metric("Threshold Used", f"{threshold * 100:.0f}%")
-                        
-                        with st.expander("📊 Detailed Prediction Information", expanded=True):
-                            st.json(prediction)
-                        
-                        with st.expander("📝 Transaction Details"):
-                            st.json(transaction)
+                        if status == "pending":
+                            st.info("⏳ Transaction received and queued for processing.")
+                            st.json(data)
+                            st.success("✅ Use the 'Check Result' button below to get the prediction!")
+                        elif status == "completed":
+                            st.session_state.transaction_result = data.get("prediction", {})
+                            st.rerun()
+                        else:
+                            st.warning(f"⚠️ Unknown status: {status}")
+                            st.json(data)
+        
+        # ============================================================
+        # نمایش وضعیت pending و دکمه Check Result
+        # ============================================================
+        
+        # اگر تراکنش در حالت pending است، دکمه Check Result را نمایش بده
+        if st.session_state.get('detection_status') == "pending" and st.session_state.get('last_transaction_id'):
+            st.markdown("---")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.info(f"🔄 Transaction ID: {st.session_state.last_transaction_id} - Waiting for result...")
+            with col2:
+                if st.button("🔄 Check Result", key="check_result_btn"):
+                    with st.spinner("Fetching result..."):
+                        result_check = call_api(f"/api/v1/fraud/result/{st.session_state.last_transaction_id}")
+                        if "error" not in result_check:
+                            st.session_state.transaction_result = result_check.get("data", {})
+                            st.session_state.detection_status = "completed"
+                            st.rerun()
+                        else:
+                            st.warning("⏳ Result not ready yet. Please try again in a few seconds.")
+        
+        # ============================================================
+        # نمایش نتیجه نهایی (completed)
+        # ============================================================
+        
+        if st.session_state.get('detection_status') == "completed" and st.session_state.get('transaction_result'):
+            st.markdown("---")
+            prediction = st.session_state.transaction_result.get("prediction", {})
+            result_data = st.session_state.transaction_result
+            
+            st.success("✅ Detection completed!")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            fraud_prob = prediction.get("fraud_probability", 0)
+            is_fraud = prediction.get("is_fraud_predicted", False)
+            
+            # with col1:
+            #     st.metric("Fraud Probability", f"{fraud_prob * 100:.1f}%")
+            
+            # with col2:
+            #     status_text = "🚨 FRAUD" if is_fraud else "✅ LEGITIMATE"
+            #     status_color = "red" if is_fraud else "green"
+            #     st.markdown(
+            #         f"### Status: <span style='color:{status_color}; font-size:24px;'>{status_text}</span>",
+            #         unsafe_allow_html=True
+            #     )
+            
+            # with col3:
+            #     st.metric("Fraud Score", f"{result_data.get('fraud_score', 0) * 100:.1f}%")
+            
+            with st.expander("📊 Detailed Prediction Information", expanded=True):
+                st.json(prediction)
+            
+            with st.expander("📝 Transaction Details"):
+                st.json(st.session_state.transaction_data)
+            
+            # دکمه برای ریست و تست مجدد
+            if st.button("🔄 New Detection", key="new_detection_btn"):
+                st.session_state.transaction_result = None
+                st.session_state.last_transaction_id = None
+                st.session_state.detection_status = None
+                st.session_state.transaction_data = None
+                st.rerun()
     
     with tab2:
         st.subheader("📦 Batch Detection")
@@ -671,7 +731,6 @@ TX003,user_001,75.25,2024-01-15T10:40:00,Spotify,Tehran,online,DEV-001,192.168.1
                             
             except Exception as e:
                 st.error(f"❌ Error reading file: {e}")
-
 # ============================================================
 # صفحه 3: آنالیز
 # ============================================================

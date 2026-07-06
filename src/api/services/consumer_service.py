@@ -4,6 +4,7 @@ from src.core.kafka_client import kafka_client
 from src.ml_engineering.inference import FraudInferenceService
 from src.core.database import db_manager, Transaction, Prediction
 from datetime import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,7 @@ class FraudConsumerService:
     def __init__(self):
         self.inference_service = FraudInferenceService()
         self.running = False
+        self.consumer = None
         
     def process_transaction(self, transaction: Dict[str, Any]):
         """پردازش تراکنش دریافتی از کافکا"""
@@ -59,6 +61,7 @@ class FraudConsumerService:
                 transaction.is_fraud = 1 if prediction.get('is_fraud', False) else 0
                 transaction.fraud_score = prediction.get('fraud_probability', 0.0)
                 session.commit()
+                logger.info(f"✅ Updated transaction {transaction_id} with fraud status")
         except Exception as e:
             session.rollback()
             logger.error(f"❌ Error updating transaction: {e}")
@@ -66,11 +69,14 @@ class FraudConsumerService:
             session.close()
     
     def start(self):
+        """شروع مصرف‌کننده"""
         if self.running:
             logger.warning("⚠️ Consumer already running")
             return
         
         self.running = True
+        
+        # ثبت callback برای پردازش پیام‌ها
         kafka_client.create_consumer(
             topic="transactions",
             group_id="fraud-detection-group",
@@ -81,6 +87,18 @@ class FraudConsumerService:
     def stop(self):
         self.running = False
         logger.info("🛑 Fraud consumer service stopped")
+        
+        # بستن consumer اگر وجود داشته باشد
+        if self.consumer:
+            try:
+                self.consumer.close()
+                logger.info("✅ Consumer closed")
+
+            except Exception as e:
+                logger.error(f"❌ Error closing consumer: {e}")
+            finally:
+                self.consumer = None
+
 
 # نمونه singleton
 consumer_service = FraudConsumerService()

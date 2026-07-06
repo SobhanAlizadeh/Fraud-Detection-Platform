@@ -300,3 +300,22 @@ async def get_current_threshold(
         "threshold": service.threshold,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+@router.get("/result/{transaction_id}")
+async def get_fraud_result(
+    transaction_id: str,
+    service: FraudService = Depends(get_fraud_service)
+):
+    """دریافت نتیجه نهایی تشخیص تقلب برای یک تراکنش"""
+    try:
+        result = await service.get_transaction_result(transaction_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        return {
+            "status": "success",
+            "data": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error fetching result: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

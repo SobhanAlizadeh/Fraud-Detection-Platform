@@ -65,34 +65,55 @@ class FraudService:
         """ذخیره تراکنش در دیتابیس"""
         session = db_manager.get_session()
         try:
+            # بررسی وجود تراکنش تکراری
+            existing = session.query(Transaction).filter(
+                Transaction.transaction_id == transaction['transaction_id']
+            ).first()
+            if existing:
+                return existing
+            
+            # تبدیل timestamp
+            timestamp = transaction.get('timestamp')
+            if isinstance(timestamp, str):
+                timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            elif timestamp is None:
+                timestamp = datetime.utcnow()
+            
+            # استخراج user_id
             user_id = transaction.get('user_id', '0')
-            user_id_int = self._extract_user_id(user_id)
+            if isinstance(user_id, str) and user_id.startswith('user_'):
+                user_id = int(user_id.split('_')[1])
+            else:
+                user_id = int(user_id) if user_id else 0
             
             # ایجاد تراکنش جدید
             new_transaction = Transaction(
                 transaction_id=transaction['transaction_id'],
-                user_id=user_id_int,
-                customer_id=user_id_int,
+                user_id=user_id,
+                customer_id=user_id,
                 merchant_id=1,
-                merchant=transaction.get('merchant'),
-                amount=transaction['amount'],
+                merchant=transaction.get('merchant', 'Unknown'),
+                amount=float(transaction['amount']),
                 transaction_type=transaction.get('transaction_type', 'online'),
-                timestamp=datetime.fromisoformat(transaction['timestamp']) if isinstance(transaction['timestamp'], str) else transaction['timestamp'],
-                is_fraud=0,
-                location=transaction.get('location'),
-                device_id=transaction.get('device_id'),
-                ip_address=transaction.get('ip_address'),
+                timestamp=timestamp,
+                is_fraud=0,  # مقدار پیش‌فرض
+                location=transaction.get('location', 'Unknown'),
+                device_id=transaction.get('device_id', 'Unknown'),
+                ip_address=transaction.get('ip_address', '0.0.0.0'),
                 fraud_score=0.0
             )
             
             session.add(new_transaction)
             session.commit()
             session.refresh(new_transaction)
+            logger.info(f"✅ Transaction saved: {transaction['transaction_id']}")
             return new_transaction
             
         except Exception as e:
             session.rollback()
             logger.error(f"❌ Error saving transaction: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             raise
         finally:
             session.close()
@@ -229,7 +250,7 @@ class FraudService:
             # 2. تعداد تراکنش‌های تقلبی
             fraud_count = session.query(Transaction).filter(
                 Transaction.timestamp >= start_date,
-                Transaction.is_fraud == True
+                Transaction.is_fraud == 1
             ).count()
             
             # 3. میانگین مبلغ
@@ -449,9 +470,35 @@ class FraudService:
             'new_threshold': threshold,
             'status': 'updated'
         }
-async def get_threshold(self) -> Dict[str, Any]:
-    """دریافت آستانه فعلی"""
-    return {
-        "threshold": self.threshold,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    async def get_threshold(self) -> Dict[str, Any]:
+        """دریافت آستانه فعلی"""
+        return {
+            "threshold": self.threshold,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    
+    async def get_transaction_result(self, transaction_id: str) -> Optional[Dict[str, Any]]:
+        """دریافت نتیجه نهایی تشخیص تقلب"""
+        session = db_manager.get_session()
+        try:
+            transaction = session.query(Transaction).filter(
+                Transaction.transaction_id == transaction_id
+            ).first()
+            if not transaction:
+                return None
+            
+            prediction = session.query(Prediction).filter(
+                Prediction.transaction_id == transaction_id
+            ).first()
+            
+            return {
+                'transaction_id': transaction.transaction_id,
+                'is_fraud': transaction.is_fraud,
+                'fraud_score': transaction.fraud_score,
+                'prediction': {
+                    'fraud_probability': prediction.fraud_probability if prediction else None,
+                    'is_fraud_predicted': prediction.is_fraud_predicted if prediction else None
+                } if prediction else None
+            }
+        finally:
+            session.close()

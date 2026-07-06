@@ -13,3 +13,7 @@ src/api/__pycache__/
 src/api/service/__pycache__/
 src/api/schemas/__pycache__/
 src/api/routers/__pycache__/
+src/api/__pycache__/main.cpython-311.pyc
+src/api/services/__pycache__/consumer_service.cpython-311.pyc
+src/api/services/__pycache__/fraud_service.cpython-311.pyc
+src/core/__pycache__/kafka_client.cpython-311.pyc
