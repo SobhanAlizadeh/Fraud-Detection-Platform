@@ -4,7 +4,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-24.0.7-blue.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MLflow](https://img.shields.io/badge/MLflow-2.8.1-orange.svg)](https://mlflow.org/)
+[![EvidentlyAI](https://img.shields.io/badge/EvidentlyAI-2.8.1-orange.svg)](https://mlflow.org/)
 [![Grafana](https://img.shields.io/badge/Grafana-10.2.0-orange.svg)](https://grafana.com/)
 
 > **Real-time Fraud Detection System powered by Machine Learning**
@@ -33,7 +33,7 @@ A production-ready, end-to-end fraud detection platform built with FastAPI, Dock
 ## Core Features
 
 - 🔍 **Real-time Fraud Detection** - Detect fraudulent transactions in milliseconds
-- 🤖 **ML Models** - XGBoost, LightGBM, CatBoost, RandomForest
+- 🤖 **ML Models** - XGBoost, LightGBM, CatBoost
 - 📊 **Data Pipeline** - ETL pipeline with data generation and validation
 - 🗄️ **Feature Store** - Lightweight feature management
 
@@ -71,7 +71,7 @@ A production-ready, end-to-end fraud detection platform built with FastAPI, Dock
 ├─────────────────────────────────────────────────────────────────────┤
 │                  Machine Learning Engine                           │
 │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐                  │
-│ │ RandomForest │ │   XGBoost    │ │  CatBoost    │                  │
+│ │ LightGBM     │ │   XGBoost    │ │  CatBoost    │                  │
 │ └──────────────┘ └──────────────┘ └──────────────┘                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                      Data & Storage                                │
@@ -81,7 +81,7 @@ A production-ready, end-to-end fraud detection platform built with FastAPI, Dock
 ├─────────────────────────────────────────────────────────────────────┤
 │                     Monitoring Stack                               │
 │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐                  │
-│ │ Prometheus   │ │   Grafana    │ │    MLflow    │                  │
+│ │  Prometheus  │ │   Grafana    │ │  Evidently   │                  │
 │ └──────────────┘ └──────────────┘ └──────────────┘                  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -121,7 +121,6 @@ docker-compose logs -f api
 | Swagger | http://localhost:8000/docs |
 | Streamlit | http://localhost:8501 |
 | Grafana | http://localhost:3000 |
-| MLflow | http://localhost:5000 |
 | PGAdmin | http://localhost:5050 |
 | Kafka UI | http://localhost:8080 |
 
