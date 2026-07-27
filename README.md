@@ -4,7 +4,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-24.0.7-blue.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![EvidentlyAI](https://img.shields.io/badge/EvidentlyAI-2.8.1-orange.svg)](https://mlflow.org/)
+[![EvidentlyAI](https://img.shields.io/badge/EvidentlyAI-0.7.21-white.svg)](https://www.evidentlyai.com/)
+[![Optuna](https://img.shields.io/badge/optuna-3.4.0-red.svg)](https://mlflow.org/)
+[![MlFlow](https://img.shields.io/badge/MlFlow-2.8.1-brown.svg)](https://mlflow.org/)
 [![Grafana](https://img.shields.io/badge/Grafana-10.2.0-orange.svg)](https://grafana.com/)
 
 > **Real-time Fraud Detection System powered by Machine Learning**
@@ -79,10 +81,10 @@ A production-ready, end-to-end fraud detection platform built with FastAPI, Dock
 │ │ PostgreSQL   │ │    Kafka     │ │    Models    │                  │
 │ └──────────────┘ └──────────────┘ └──────────────┘                  │
 ├─────────────────────────────────────────────────────────────────────┤
-│                     Monitoring Stack                               │
-│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐                  │
-│ │  Prometheus  │ │   Grafana    │ │  Evidently   │                  │
-│ └──────────────┘ └──────────────┘ └──────────────┘                  │
+│                     Monitoring Stack                                │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ │
+│ │  Prometheus  │ │   Grafana    │ │  Evidently   │ |    MlFlow    | │
+│ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -123,6 +125,7 @@ docker-compose logs -f api
 | Grafana | http://localhost:3000 |
 | PGAdmin | http://localhost:5050 |
 | Kafka UI | http://localhost:8080 |
+| MlFlow | http://localhost:5000 |
 
 ---
 
