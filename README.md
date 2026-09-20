@@ -1,3 +1,59 @@
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Fraud Detection Platform — Real-Time ML &amp; MLOps | Sobhan Alizadeh</title>
+  <meta name="description" content="Production-ready end-to-end machine learning platform for real-time fraud detection — FastAPI, SHAP explainability, MLflow, Docker, Prometheus &amp; Grafana monitoring, PostgreSQL and CI/CD with GitHub Actions." />
+  <meta name="keywords" content="Fraud Detection, Machine Learning, Real-Time Prediction, FastAPI, SHAP, MLflow, Prometheus, Grafana, Docker, Kubernetes, PostgreSQL, MLOps, Sobhan Alizadeh" />
+  <meta name="author" content="Sobhan Alizadeh" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#2563EB" />
+  <link rel="canonical" href="https://sobhanalizadeh.github.io/Fraud-Detection-Platform/" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="favicon.ico" /> <!-- اختیاری: اگر favicon.ico ندارید حذف کنید -->
+
+  <!-- Open Graph (پیش‌نمایش در شبکه‌های اجتماعی) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Sobhan Alizadeh" />
+  <meta property="og:title" content="Fraud Detection Platform — Real-Time ML &amp; MLOps" />
+  <meta property="og:description" content="End-to-end ML platform for real-time fraud detection with SHAP explainability, MLflow tracking and Prometheus &amp; Grafana monitoring." />
+  <meta property="og:url" content="https://sobhanalizadeh.github.io/Fraud-Detection-Platform/" />
+  <meta property="og:image" content="https://sobhanalizadeh.github.io/Fraud-Detection-Platform/og-image.png" /> <!-- اختیاری: تصویر 1200×630 بسازید؛ تا آن موقع این خط را حذف کنید -->
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Fraud Detection Platform — Real-Time ML &amp; MLOps" />
+  <meta name="twitter:description" content="End-to-end ML platform for real-time fraud detection with SHAP explainability, MLflow tracking and Prometheus &amp; Grafana monitoring." />
+  <meta name="twitter:image" content="https://sobhanalizadeh.github.io/Fraud-Detection-Platform/og-image.png" /> <!-- اختیاری -->
+
+  <!-- JSON-LD — Structured Data for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Fraud Detection Platform",
+    "url": "https://sobhanalizadeh.github.io/Fraud-Detection-Platform/",
+    "description": "Production-ready end-to-end machine learning platform for real-time fraud detection — FastAPI, SHAP explainability, MLflow, Docker, Prometheus & Grafana monitoring, PostgreSQL and CI/CD with GitHub Actions.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Sobhan Alizadeh",
+      "jobTitle": "AI Engineer",
+      "url": "https://github.com/sobhanalizadeh",
+      "sameAs": [
+        "https://github.com/sobhanalizadeh",
+        "https://linkedin.com/in/sobhan-alizadeh"
+      ]
+    },
+    "keywords": "Fraud Detection, Machine Learning, Real-Time Prediction, SHAP, MLflow, MLOps, FastAPI",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
 # 🛡️ Fraud Detection Platform
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
